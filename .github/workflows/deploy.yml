@@ -13,7 +13,7 @@ env:
   ACR_NAME: jtlsuppliermgmt
   ACR_LOGIN_SERVER: jtlsuppliermgmt.azurecr.io
   IMAGE_NAME: jtl-hub-supplier-management
-  RESOURCE_GROUP: Lieferantenmanagement
+  RESOURCE_GROUP: rg-asc-export
   CONTAINER_APP_NAME: supplier-management-app
   CONTAINER_APP_ENV: supplier-management-env
   LOCATION: westeurope
