@@ -20,6 +20,7 @@ COPY src/backend/SupplierManagement.sln .
 COPY src/backend/SupplierManagement.Api/SupplierManagement.Api.csproj SupplierManagement.Api/
 COPY src/backend/SupplierManagement.Core/SupplierManagement.Core.csproj SupplierManagement.Core/
 COPY src/backend/SupplierManagement.Infrastructure/SupplierManagement.Infrastructure.csproj SupplierManagement.Infrastructure/
+COPY src/backend/SupplierManagement.Tests/SupplierManagement.Tests.csproj SupplierManagement.Tests/
 
 RUN dotnet restore
 
