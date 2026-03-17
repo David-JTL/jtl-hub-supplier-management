@@ -1,0 +1,80 @@
+{
+  "manifestVersion": "1.0.0",
+  "version": "0.1.0",
+  "name": {
+    "short": "supplier-management",
+    "full": "Lieferantenverwaltung"
+  },
+  "description": {
+    "short": "Verwaltung von Lieferantenstammdaten, Kontakten, Finanzen und Dokumenten.",
+    "full": "Eigenständige JTL Hub App für die vollständige Verwaltung von Lieferantenstammdaten, Ansprechpartnern, Zahlungsinformationen und zugehörigen Dokumenten. Integriert sich nahtlos in das JTL ERP-System mit Menü-Items, Tabs und Pane-Ansichten."
+  },
+  "defaultLocale": "de-DE",
+  "locales": {
+    "de-DE": {
+      "appName": "Lieferantenverwaltung",
+      "menuLabel": "Lieferanten"
+    },
+    "en": {
+      "appName": "Supplier Management",
+      "menuLabel": "Suppliers"
+    }
+  },
+  "icon": {
+    "light": "https://hub.jtl-cloud.com/assets/image-placeholder.png",
+    "dark": "https://hub.jtl-cloud.com/assets/image-placeholder.png"
+  },
+  "communication": {
+    "supportUrl": "https://example.com/support/__ACTIVE_LOCALE__/",
+    "guideUrl": "https://example.com/guide/__ACTIVE_LOCALE__/"
+  },
+  "legal": {
+    "gdprRequestUrl": "https://example.com/gdpr/request",
+    "gdprDeleteUrl": "https://example.com/gdpr/delete",
+    "privacyUrl": "https://example.com/privacy",
+    "termsOfUseUrl": "https://example.com/terms"
+  },
+  "lifecycle": {
+    "setupUrl": "https://supplier-app.example.com/setup",
+    "connectUrl": "https://supplier-app.example.com/lifecycle/connect",
+    "disconnectUrl": "https://supplier-app.example.com/lifecycle/disconnect"
+  },
+  "requirements": {
+    "minCloudApiVersion": "1.0.0"
+  },
+  "capabilities": {
+    "hub": {
+      "appLauncher": {
+        "redirectUrl": "https://supplier-app.example.com/erp"
+      }
+    },
+    "erp": {
+      "headless": {
+        "url": "https://supplier-app.example.com/erp"
+      },
+      "menuItems": [
+        {
+          "id": "supplier-management",
+          "name": "__TK_menuLabel__",
+          "url": "https://supplier-app.example.com/erp/suppliers"
+        }
+      ],
+      "tabs": [
+        {
+          "context": "supplierDetail",
+          "name": "__TK_appName__",
+          "url": "https://supplier-app.example.com/erp/supplier-tab",
+          "features": []
+        }
+      ],
+      "pane": [
+        {
+          "url": "https://supplier-app.example.com/pane",
+          "title": "__TK_appName__",
+          "context": "suppliers",
+          "matchChildContext": true
+        }
+      ]
+    }
+  }
+}

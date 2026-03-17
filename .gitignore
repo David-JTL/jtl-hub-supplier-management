@@ -1,0 +1,49 @@
+# .NET
+bin/
+obj/
+*.user
+*.suo
+*.userprefs
+*.DotSettings.user
+.vs/
+*.sln.docstates
+packages/
+*.nupkg
+
+# Node / React
+node_modules/
+dist/
+build/
+.env
+.env.local
+.env.*.local
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.backup
+*.tfvars
+!*.tfvars.example
+.terraform.lock.hcl
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+docker-compose.override.yml
+
+# Logs
+*.log
+logs/
+
+# Coverage
+coverage/
+TestResults/
