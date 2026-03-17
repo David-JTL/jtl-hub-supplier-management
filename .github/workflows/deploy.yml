@@ -23,11 +23,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Code auschecken
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2. Bei Azure anmelden (OIDC / Federated Credential)
       - name: Azure Login
         uses: azure/login@v2
         with:
@@ -35,53 +33,55 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      # 3. Bei ACR anmelden
       - name: Login to ACR
         run: az acr login --name ${{ env.ACR_NAME }}
 
-      # 4. Docker Image bauen und taggen
-      - name: Build Docker image
+      - name: Build and push Docker image
         run: |
-          docker build -t ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ github.sha }} .
-          docker tag ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ github.sha }} ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:latest
-
-      # 5. Image in ACR pushen
-      - name: Push to ACR
-        run: |
+          docker build -t ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ github.sha }} \
+                       -t ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:latest .
           docker push ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
           docker push ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:latest
 
-      # 6. Container Apps Environment erstellen (falls nicht vorhanden)
-      - name: Create Container Apps Environment
+      - name: Ensure Container Apps Environment exists
         run: |
-          az containerapp env show \
-            --name ${{ env.CONTAINER_APP_ENV }} \
-            --resource-group ${{ env.RESOURCE_GROUP }} 2>/dev/null || \
-          az containerapp env create \
-            --name ${{ env.CONTAINER_APP_ENV }} \
-            --resource-group ${{ env.RESOURCE_GROUP }} \
-            --location ${{ env.LOCATION }}
+          if ! az containerapp env show --name ${{ env.CONTAINER_APP_ENV }} --resource-group ${{ env.RESOURCE_GROUP }} > /dev/null 2>&1; then
+            echo "Creating Container Apps Environment..."
+            az containerapp env create \
+              --name ${{ env.CONTAINER_APP_ENV }} \
+              --resource-group ${{ env.RESOURCE_GROUP }} \
+              --location ${{ env.LOCATION }}
+          else
+            echo "Container Apps Environment already exists."
+          fi
 
-      # 7. Container App erstellen oder aktualisieren
-      - name: Deploy to Container Apps
+      - name: Deploy Container App
         run: |
-          az containerapp show \
-            --name ${{ env.CONTAINER_APP_NAME }} \
-            --resource-group ${{ env.RESOURCE_GROUP }} 2>/dev/null && \
-          az containerapp update \
-            --name ${{ env.CONTAINER_APP_NAME }} \
-            --resource-group ${{ env.RESOURCE_GROUP }} \
-            --image ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ github.sha }} || \
-          az containerapp create \
-            --name ${{ env.CONTAINER_APP_NAME }} \
-            --resource-group ${{ env.RESOURCE_GROUP }} \
-            --environment ${{ env.CONTAINER_APP_ENV }} \
-            --image ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ github.sha }} \
-            --registry-server ${{ env.ACR_LOGIN_SERVER }} \
-            --registry-identity system \
-            --target-port 8080 \
-            --ingress external \
-            --min-replicas 0 \
-            --max-replicas 3 \
-            --cpu 0.5 \
-            --memory 1.0Gi
+          if az containerapp show --name ${{ env.CONTAINER_APP_NAME }} --resource-group ${{ env.RESOURCE_GROUP }} > /dev/null 2>&1; then
+            echo "Updating existing Container App..."
+            az containerapp update \
+              --name ${{ env.CONTAINER_APP_NAME }} \
+              --resource-group ${{ env.RESOURCE_GROUP }} \
+              --image ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          else
+            echo "Creating new Container App..."
+            az containerapp create \
+              --name ${{ env.CONTAINER_APP_NAME }} \
+              --resource-group ${{ env.RESOURCE_GROUP }} \
+              --environment ${{ env.CONTAINER_APP_ENV }} \
+              --image ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ github.sha }} \
+              --registry-server ${{ env.ACR_LOGIN_SERVER }} \
+              --registry-identity system \
+              --target-port 8080 \
+              --ingress external \
+              --min-replicas 0 \
+              --max-replicas 3 \
+              --cpu 0.5 \
+              --memory 1.0Gi
+          fi
+
+      - name: Show App URL
+        run: |
+          FQDN=$(az containerapp show --name ${{ env.CONTAINER_APP_NAME }} --resource-group ${{ env.RESOURCE_GROUP }} --query "properties.configuration.ingress.fqdn" -o tsv)
+          echo "🚀 App deployed to: https://${FQDN}"
+          echo "🏥 Health check: https://${FQDN}/api/health"

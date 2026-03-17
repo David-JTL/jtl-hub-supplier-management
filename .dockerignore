@@ -1,0 +1,26 @@
+.git/
+.github/
+*.md
+LICENSE
+infra/
+
+# .NET
+**/bin/
+**/obj/
+**/.vs/
+
+# Node
+**/node_modules/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+docker-compose.yml
+docker-compose.override.yml
