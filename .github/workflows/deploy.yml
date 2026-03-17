@@ -1,4 +1,4 @@
-name: Build and Deploy to Azure Container Apps
+name: Build, Deploy & Verify
 
 on:
   push:
@@ -80,8 +80,73 @@ jobs:
               --memory 1.0Gi
           fi
 
-      - name: Show App URL
+      - name: Get App URL
+        id: get-url
         run: |
           FQDN=$(az containerapp show --name ${{ env.CONTAINER_APP_NAME }} --resource-group ${{ env.RESOURCE_GROUP }} --query "properties.configuration.ingress.fqdn" -o tsv)
-          echo "🚀 App deployed to: https://${FQDN}"
-          echo "🏥 Health check: https://${FQDN}/api/health"
+          echo "APP_URL=https://${FQDN}" >> $GITHUB_OUTPUT
+          echo "🚀 App URL: https://${FQDN}"
+
+      - name: Smoke Test — Wait for app to be ready
+        run: |
+          APP_URL="${{ steps.get-url.outputs.APP_URL }}"
+          echo "Waiting for app to be ready at ${APP_URL}..."
+          for i in $(seq 1 30); do
+            if curl -sf "${APP_URL}/api/health" > /dev/null 2>&1; then
+              echo "✅ App is responding after ${i}0 seconds"
+              break
+            fi
+            echo "  Attempt ${i}/30 — not ready yet, waiting 10s..."
+            sleep 10
+          done
+
+      - name: Smoke Test — Health Endpoint
+        run: |
+          APP_URL="${{ steps.get-url.outputs.APP_URL }}"
+          echo "Testing: ${APP_URL}/api/health"
+          
+          RESPONSE=$(curl -sf "${APP_URL}/api/health")
+          echo "Response: ${RESPONSE}"
+          
+          if echo "${RESPONSE}" | grep -q '"status":"Healthy"'; then
+            echo "✅ Health check passed!"
+          else
+            echo "❌ Health check failed! Expected 'Healthy' status."
+            exit 1
+          fi
+
+      - name: Smoke Test — Frontend
+        run: |
+          APP_URL="${{ steps.get-url.outputs.APP_URL }}"
+          echo "Testing: ${APP_URL}/"
+          
+          HTTP_CODE=$(curl -s -o /tmp/frontend.html -w "%{http_code}" "${APP_URL}/")
+          echo "HTTP Status: ${HTTP_CODE}"
+          
+          if [ "${HTTP_CODE}" -eq 200 ]; then
+            echo "✅ Frontend returns HTTP 200"
+          else
+            echo "❌ Frontend returned HTTP ${HTTP_CODE}"
+            exit 1
+          fi
+          
+          if grep -q '<div id="root">' /tmp/frontend.html; then
+            echo "✅ Frontend contains React root element"
+          else
+            echo "❌ Frontend does not contain React root element"
+            cat /tmp/frontend.html | head -20
+            exit 1
+          fi
+
+      - name: Deployment Summary
+        if: always()
+        run: |
+          APP_URL="${{ steps.get-url.outputs.APP_URL }}"
+          echo "=============================="
+          echo "  DEPLOYMENT SUMMARY"
+          echo "=============================="
+          echo "  App URL:    ${APP_URL}"
+          echo "  Health:     ${APP_URL}/api/health"
+          echo "  Swagger:    ${APP_URL}/swagger"
+          echo "  Image:      ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ github.sha }}"
+          echo "=============================="
