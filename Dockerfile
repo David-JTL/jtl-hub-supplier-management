@@ -16,15 +16,11 @@ RUN npm run build
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS backend-build
 WORKDIR /src
 
-COPY src/backend/SupplierManagement.sln .
-COPY src/backend/SupplierManagement.Api/SupplierManagement.Api.csproj SupplierManagement.Api/
-COPY src/backend/SupplierManagement.Core/SupplierManagement.Core.csproj SupplierManagement.Core/
-COPY src/backend/SupplierManagement.Infrastructure/SupplierManagement.Infrastructure.csproj SupplierManagement.Infrastructure/
-COPY src/backend/SupplierManagement.Tests/SupplierManagement.Tests.csproj SupplierManagement.Tests/
-
-RUN dotnet restore
-
+# Copy everything at once (simpler, avoids path issues)
 COPY src/backend/ .
+
+# Restore and publish only the API project
+RUN dotnet restore SupplierManagement.Api/SupplierManagement.Api.csproj
 RUN dotnet publish SupplierManagement.Api/SupplierManagement.Api.csproj -c Release -o /app/publish --no-restore
 
 # ============================================
