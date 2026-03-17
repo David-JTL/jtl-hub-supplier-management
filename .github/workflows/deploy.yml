@@ -79,7 +79,14 @@ jobs:
           ACR_PASSWORD=$(az acr credential show --name ${{ env.ACR_NAME }} --query "passwords[0].value" -o tsv)
           
           if az containerapp show --name ${{ env.CONTAINER_APP_NAME }} --resource-group ${{ env.RESOURCE_GROUP }} > /dev/null 2>&1; then
-            echo "Updating existing Container App..."
+            echo "Updating existing Container App with registry credentials..."
+            az containerapp registry set \
+              --name ${{ env.CONTAINER_APP_NAME }} \
+              --resource-group ${{ env.RESOURCE_GROUP }} \
+              --server ${{ env.ACR_LOGIN_SERVER }} \
+              --username $ACR_USERNAME \
+              --password $ACR_PASSWORD
+            
             az containerapp update \
               --name ${{ env.CONTAINER_APP_NAME }} \
               --resource-group ${{ env.RESOURCE_GROUP }} \
